@@ -80,6 +80,34 @@ const AgeInput=({label,value,onChange})=>(
 );
 const Loader=()=><div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"60px",color:C.muted,fontStyle:"italic",fontSize:"18px"}}>Loading...</div>;
 
+function CaseCard({patient:p, index:i}){
+  const [expanded, setExpanded] = useState(false);
+  const hasLongSummary = p.urdu_summary && p.urdu_summary.length > 120;
+  const previewText = hasLongSummary && !expanded ? p.urdu_summary.slice(0,120)+"..." : p.urdu_summary;
+  return(
+    <div className="fade-in" style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:"10px",overflow:"hidden",animationDelay:`${i*0.07}s`}}>
+      <div style={{padding:"16px 24px 14px",borderBottom:`1px solid ${C.border}`}}>
+        <div style={{fontSize:"21px",color:C.text,fontWeight:600,marginBottom:"8px",letterSpacing:"0.01em"}}>{publicTitle(p.case_history)}</div>
+        <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+          {(p.conditions||[]).map(c=><Badge key={c} label={c} color={C.accentDim}/>)}
+          <Badge label={p.case_type==="research"?"RESEARCH":"REGULAR"} color={p.case_type==="research"?C.research:C.muted}/>
+          <Badge label={p.status} color={p.status==="Active"?C.success:p.status==="Completed"?C.accent:C.muted}/>
+        </div>
+      </div>
+      <div style={{padding:"20px 24px 12px",direction:"rtl",fontFamily:"'Noto Nastaliq Urdu',serif",fontSize:"19px",lineHeight:2.4,color:p.urdu_summary?C.text:C.muted,fontStyle:p.urdu_summary?"normal":"italic"}}>
+        {p.urdu_summary ? previewText : "اردو خلاصہ جلد شائع کیا جائے گا۔"}
+      </div>
+      {hasLongSummary && (
+        <div style={{padding:"0 24px 16px",direction:"rtl"}}>
+          <button onClick={()=>setExpanded(!expanded)} style={{background:"transparent",border:`1px solid ${C.accentDim}`,borderRadius:"4px",color:C.accent,fontFamily:"'Noto Nastaliq Urdu',serif",fontSize:"15px",padding:"6px 16px",cursor:"pointer"}}>
+            {expanded ? "کم کریں ▲" : "مزید پڑھیں ▼"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PublicJournal({onLogin}){
   const [overlay,setOverlay]=useState(null);
   const [loginId,setLoginId]=useState("");const [loginPw,setLoginPw]=useState("");const [loginErr,setLoginErr]=useState("");
@@ -122,21 +150,10 @@ function PublicJournal({onLogin}){
         {loading&&<Loader/>}
         {!loading&&patients.length===0&&<div style={{textAlign:"center",padding:"60px",color:C.muted,fontStyle:"italic"}}>Case summaries will appear here as they are published.</div>}
         <div style={{display:"grid",gap:"20px"}}>
-          {patients.map((p,i)=>(
-            <div key={p.id} className="fade-in" style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:"10px",overflow:"hidden",animationDelay:`${i*0.07}s`}}>
-              <div style={{padding:"16px 24px 12px",borderBottom:`1px solid ${C.border}`}}>
-                <div style={{fontSize:"19px",color:C.accent,fontStyle:"italic",marginBottom:"8px"}}>{publicTitle(p.case_history)}</div>
-                <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
-                  {(p.conditions||[]).map(c=><Badge key={c} label={c} color={C.accentDim}/>)}
-                  <Badge label={p.case_type==="research"?"RESEARCH":"REGULAR"} color={p.case_type==="research"?C.research:C.muted}/>
-                  <Badge label={p.status} color={p.status==="Active"?C.success:p.status==="Completed"?C.accent:C.muted}/>
-                </div>
-              </div>
-              <div style={{padding:"20px 24px",direction:"rtl",fontFamily:"'Noto Nastaliq Urdu',serif",fontSize:"19px",lineHeight:2.4,color:p.urdu_summary?C.text:C.muted,fontStyle:p.urdu_summary?"normal":"italic"}}>
-                {p.urdu_summary||"اردو خلاصہ جلد شائع کیا جائے گا۔"}
-              </div>
-            </div>
+          {[...patients].reverse().map((p,i)=>(
+            <CaseCard key={p.id} patient={p} index={i}/>
           ))}
+
         </div>
       </div>
       {overlay&&(
